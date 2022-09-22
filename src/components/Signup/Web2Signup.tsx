@@ -1,0 +1,209 @@
+// Copyright 2019-2020 @Premiurly/polkassembly authors & contributors
+// This software may be modified and distributed under the terms
+// of the Apache-2.0 license. See the LICENSE file for details.
+
+import styled from '@xstyled/styled-components';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
+import React, { useContext } from 'react';
+import { FieldError,useForm } from 'react-hook-form';
+import { Divider, Message } from 'semantic-ui-react';
+
+import { ModalContext } from '../../context/ModalContext';
+import { UserDetailsContext } from '../../context/UserDetailsContext';
+import { useSignupMutation } from '../../generated/graphql';
+import { handleTokenChange } from '../../services/auth.service';
+import { Wallet } from '../../types';
+import Button from '../../ui-components/Button';
+import FilteredError from '../../ui-components/FilteredError';
+import { Form } from '../../ui-components/Form';
+import HelperTooltip from '../../ui-components/HelperTooltip';
+import messages from '../../util/messages';
+import * as validation from '../../util/validation';
+import WalletButtons from '../Login/WalletButtons';
+
+interface Props {
+	className?: string
+	onWalletSelect: (wallet: Wallet) => void
+	walletError: string | undefined
+}
+
+const SignupForm = ({ className, onWalletSelect, walletError }:Props): JSX.Element => {
+	const router = useRouter();
+	const currentUser = useContext(UserDetailsContext);
+	const [signupMutation, { loading, error }] = useSignupMutation();
+	const { errors, handleSubmit, register } = useForm();
+
+	const { setModal } = useContext(ModalContext);
+
+	const handleSubmitForm = (data:Record<string, any>):void => {
+		const { email, password, username } = data;
+
+		if (username && password){
+			signupMutation({
+				variables: {
+					email,
+					password,
+					username
+				}
+			})
+				.then(({ data }) => {
+					if (data && data.signup && data.signup.token) {
+						handleTokenChange(data.signup.token, currentUser);
+						if (email) {
+							setModal({ content: 'We sent you an email to verify your address. Click on the link in the email.', title: 'You\'ve got some mail' });
+						}
+						router.back();
+					}}
+
+				).catch((e) => {
+					console.error('Login error', e);
+				});
+		}
+	};
+
+	return (
+		<Form className={className} onSubmit={handleSubmit(handleSubmitForm)}>
+			<h3>
+				Sign Up
+			</h3>
+
+			{walletError && <Message negative>
+				<Message.Header>{walletError}</Message.Header>
+			</Message>}
+
+			<Form.Group>
+				<Form.Field width={16}>
+					<label>Username<sup>*</sup></label>
+					<input
+						className={errors.username ? 'error' : ''}
+						name='username'
+						placeholder='john'
+						ref={register(validation.username)}
+						type='text'
+					/>
+					{(errors.username as FieldError)?.type === 'maxLength' && <span className={'errorText'}>{messages.VALIDATION_USERNAME_MAXLENGTH_ERROR}</span>}
+					{(errors.username as FieldError)?.type === 'minLength' && <span className={'errorText'}>{messages.VALIDATION_USERNAME_MINLENGTH_ERROR}</span>}
+					{(errors.username as FieldError)?.type === 'pattern' && <span className={'errorText'}>{messages.VALIDATION_USERNAME_PATTERN_ERROR}</span>}
+					{(errors.username as FieldError)?.type === 'required' && <span className={'errorText'}>{messages.VALIDATION_USERNAME_REQUIRED_ERROR}</span>}
+				</Form.Field>
+			</Form.Group>
+			<Form.Group>
+				<Form.Field width={16}>
+					<label>
+						Email
+						<HelperTooltip
+							content='Your email is used for password recovery or discussion notifications.'
+						/>
+					</label>
+					<input
+						className={errors.email ? 'error' : ''}
+						name='email'
+						placeholder='john@doe.com'
+						ref={register(validation.email)}
+						type='text'
+					/>
+					{errors.email && <span className={'errorText'}>{messages.VALIDATION_EMAIL_ERROR}</span>}
+				</Form.Field>
+			</Form.Group>
+			<Form.Group>
+				<Form.Field width={16}>
+					<label>Password<sup>*</sup></label>
+					<input
+						className={errors.password ? 'error' : ''}
+						name='password'
+						placeholder='Password'
+						ref={register(validation.password)}
+						type='password'
+					/>
+					{errors.password && <span className={'errorText'}>{messages.VALIDATION_PASSWORD_ERROR}</span>}
+				</Form.Field>
+			</Form.Group >
+			<Form.Field>
+				<label className='checkbox-label'>
+					<input
+						className={errors.termsandconditions ? 'error' : ''}
+						name='termsandconditions'
+						value='yes'
+						ref={register({ required: true })}
+						type='checkbox'
+					/>
+					I have read and agree to the terms of the <Link href='/terms-and-conditions' passHref><a>Polkassembly end user agreement</a></Link>.
+				</label>
+				{errors.termsandconditions && <div className={'errorText'}>Please agree to the terms of the Polkassembly end user agreement.</div>}
+			</Form.Field>
+			<div className='text-muted'>To see how we use your personal data please see our <Link href='/privacy' passHref><a>privacy notice</a></Link>.</div>
+			<div className={'mainButtonContainer'}>
+				<Button
+					primary
+					disabled={loading}
+					onClick={handleSubmitForm}
+					type="submit"
+				>
+					Sign-up
+				</Button>
+				{error?.message && <FilteredError text={error.message}/>}
+
+				<div>
+					<WalletButtons disabled={loading} onWalletSelect={onWalletSelect} />
+				</div>
+			</div>
+			<Divider horizontal>Or</Divider>
+			<div className={'mainButtonContainer'}>
+				<div className='text-center'> Already have an account ? Log In! </div>
+				<Button secondary onClick={() => router.push('/login')} type='button' className='button pink_primary-text'>
+					Login
+				</Button>
+			</div>
+		</Form>
+	);
+};
+
+export default styled(SignupForm)`
+
+	.mainButtonContainer{
+		align-items: center;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		margin-top: 3rem;
+	}
+
+	input.error {
+		border-color: red_secondary !important;
+	}
+
+	.errorText {
+		color: red_secondary;
+	}
+
+	.checkbox-label {
+		position: relative;
+		bottom: 0.1rem;
+		display: inline-block !important;
+		font-size: sm !important;
+		font-weight: 400 !important;
+		color: grey_primary !important;
+		a {
+			color: grey_primary;
+			border-bottom-style: solid;
+			border-bottom-width: 1px;
+			border-bottom-color: grey_primary;
+		}
+	}
+
+	.text-center{
+		text-align: center;
+		margin-bottom: 0.3em;
+	}
+
+	.button {
+		width: 80%;
+		margin: 4px 0;
+		height: 40px;
+	}
+
+	.pink_primary-text{
+		color: pink_primary !important;
+	}
+`;
