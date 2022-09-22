@@ -27,40 +27,42 @@ const network = getNetwork();
 
 const App = ({ Component, pageProps }: AppProps) => {
 	return (
-		<>
-			<Head>
-				<title>Polkassembly | {network}</title>
-				<meta name="description" content={`Polkassembly, discussion platform for ${network} governance`} />
-				<meta charSet="utf-8" />
-				<link rel="icon" href="/favicon.ico" />
-				<meta name="theme-color" content="#000000" />
-				<meta property="og:title" content="Polkassembly" />
-				<meta name="viewport" content="width=device-width, initial-scale=1" />
-				<meta property="og:type" content="website" />
-				<meta property="og:image" content="https://polkassembly.io/images/polkassembly.png" />
-				<meta property="og:description" content="Democratizing governance for substrate blockchains" />
-				<link rel="apple-touch-icon" href="/logo192.png" />
-				<link rel="manifest" href="/manifest.json" />
-			</Head>
-			<ThemeProvider theme={theme}>
-				<NotificationProvider>
-					<ModalProvider>
-						<UserDetailsProvider>
-							<Apollo>
-								<GlobalStyle />
-								<Notifications/>
-								<Modal/>
-								<ApiContextProvider>
-									<MediaContextProvider>
-										<AppLayout Component={Component} pageProps={pageProps}  />
-									</MediaContextProvider>
-								</ApiContextProvider>
-							</Apollo>
-						</UserDetailsProvider>
-					</ModalProvider>
-				</NotificationProvider>
-			</ThemeProvider>
-		</>
+		<React.StrictMode>
+			<>
+				<Head>
+					<title>Polkassembly | {network}</title>
+					<meta name="description" content={`Polkassembly, discussion platform for ${network} governance`} />
+					<meta charSet="utf-8" />
+					<link rel="icon" href="/favicon.ico" />
+					<meta name="theme-color" content="#000000" />
+					<meta property="og:title" content="Polkassembly" />
+					<meta name="viewport" content="width=device-width, initial-scale=1" />
+					<meta property="og:type" content="website" />
+					<meta property="og:image" content="https://polkassembly.io/images/polkassembly.png" />
+					<meta property="og:description" content="Democratizing governance for substrate blockchains" />
+					<link rel="apple-touch-icon" href="/logo192.png" />
+					<link rel="manifest" href="/manifest.json" />
+				</Head>
+				<ThemeProvider theme={theme}>
+					<NotificationProvider>
+						<ModalProvider>
+							<UserDetailsProvider>
+								<Apollo>
+									<GlobalStyle />
+									<Notifications/>
+									<Modal/>
+									<ApiContextProvider>
+										<MediaContextProvider>
+											<AppLayout Component={Component} pageProps={pageProps}  />
+										</MediaContextProvider>
+									</ApiContextProvider>
+								</Apollo>
+							</UserDetailsProvider>
+						</ModalProvider>
+					</NotificationProvider>
+				</ThemeProvider>
+			</>
+		</React.StrictMode>
 	);
 };
 
